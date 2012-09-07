@@ -1,0 +1,6 @@
+<config>
+    <authentication>
+        <username>admin</username>
+        <password>xxx</password>
+    </authentication>
+</config>
