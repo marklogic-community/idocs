@@ -34,3 +34,6 @@ API thoughts
 * individual objects will take in method, URI, list of query params, list of headers, request body
 
 
+Proxy backend
+  To configure, copy config-sample.xml to config.xml and configure your auth credentials for the rest api
+  server as well as the URL scheme/host/port for the rest api server itself

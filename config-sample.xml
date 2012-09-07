@@ -2,5 +2,6 @@
     <authentication>
         <username>admin</username>
         <password>xxx</password>
-    </authentication>
+    </authentication>  
+    <rapi-server>//localhost:4446</rapi-server> <!-- host relative scheme is ok -->
 </config>
