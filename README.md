@@ -35,5 +35,7 @@ API thoughts
 
 
 Proxy backend
-  To configure, copy config-sample.xml to config.xml and configure your auth credentials for the rest api
-  server as well as the URL scheme/host/port for the rest api server itself
+* To configure, copy config-sample.xml to config.xml and configure your auth credentials for the rest api
+server as well as the URL scheme/host/port for the rest api server itself
+* To set up, use the admin UI to create an app server with app auth, default user of admin. Point its 
+root dir at the top level directory of this repo.  And point its url rewriter to /xquery/url-rewrite.xqy
