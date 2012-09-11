@@ -87,7 +87,6 @@ ML.IDOCS = function () {
 					headers: {},
 					params: {}						// object with paramaters to pass to endpoint
 				},
-				write: false,						// write -> whether or not the container is writeable - not supported in v1
 				execute: true,						// execute -> whether or not to execute against server
 			},
 			
@@ -95,7 +94,6 @@ ML.IDOCS = function () {
 			{
 				name: 'CURL',						// REQUIRED: name -> name displayed on the tab
 				contents: "curl -X GET 'http://myhost/store?uri=/afternoon-drink.json'",  // REQUIRED: contents -> for display in container
-				write: false,						// write -> whether or not the container is writeable - not supported in v1
 				execute: false						// execute -> whether or not to execute against server
 			}			
 		]}
@@ -117,6 +115,7 @@ ML.IDOCS = function () {
 		// create new doc object
 		docs[containerID] = function () { 
 			var doc,
+				_generateForm,
 				display,
 				execute;
 			
@@ -124,9 +123,26 @@ ML.IDOCS = function () {
 			doc = {};			
 			doc.containerID = containerID;
 			doc.container = $(containerID);
-			doc.config = config;		
+			/* public variables */
+			doc.config = config;
+			
+			/* public functions */
 			doc.display = display;
 			doc.execute = execute;
+			
+			
+			/*** returns a form object, generated from the JSON object passed in, with name value pair properties. ***/
+			_generateForm = function(formObj) {
+				var table;
+				
+				table = $('<form><table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody></tbody></table><input type="submit" class="button execute" value="Execute"></form>');
+				
+				$.each(formObj, function(name, value) {		
+					table.find('tbody').append('<tr><td class="name">' + name + '</td><td class="parameter"><input value="' + value + '" name="' + name + '"></td></tr>')
+				});
+				
+				return table;
+			};
 			
 			/*** Public iDOC functions ***/
 			display = function(currentTab) {
@@ -137,16 +153,46 @@ ML.IDOCS = function () {
 				if (!ML.assert((doc.config.tabs[currentTab] !== undefined),'error','ERROR: ML.IDOCS (displayTab) - "currentTab" ' + currentTab + ' is not valid array location')) return false; /* exits ML.IDOCS doc creation */
 				
 				currentTabConfig = doc.config.tabs[currentTab];
-				doc.container.find('.tabs li').removeClass('selected');
-				$(doc.container.find('.tabs li')[currentTab]).addClass('selected');
+				doc.container.find('.tabs li').removeClass('selected'); 			// deselect all tabs
+				$(doc.container.find('.tabs li')[currentTab]).addClass('selected');	// select current tab
 				
-				doc.container.find('textarea').val(doc.config.tabs[currentTab].contents);
-				// TODO:  Add any CodeMirror related wiring here for highlighting
+				// clear display container HTML
+				doc.container.find('.input').html('');
+				doc.container.find('.output').html('');
 				
-				if (doc.config.tabs[currentTab].execute) {
-					$(doc.container.find('.execute')).addClass('show');  // displays execute button
+				// if there is a request object, display the request UI, otherwise, show 
+				if (doc.config.tabs[currentTab].request !== undefined) {
+					// request UI
+					doc.container.find('.execute').addClass('show');  				// displays execute button					
+					doc.container.find('.input').append('<div class="request"><div class="info"><p><span class="method">' + (doc.config.tabs[currentTab].request.method || "") + '</span><span class="uri">' + (doc.config.tabs[currentTab].request.endpoint || "") + '</span></p><p class="description">' + (doc.config.tabs[currentTab].request.description || "") + '</p></div>');					
+					
+					// UI for request headers, if headers passed
+					if (doc.config.tabs[currentTab].request.headers !== undefined && (Object.keys(doc.config.tabs[currentTab].request.headers).length > 0)) {
+						doc.container.find('.request').append('<div class="headers"></div>');
+						doc.container.find('.headers').append('<h2 class="idoc-header">Headers</h2>');
+						doc.container.find('.headers').append(_generateForm(doc.config.tabs[currentTab].request.headers));
+					}
+					
+					// UI for params, if params passed
+					if (doc.config.tabs[currentTab].request.params !== undefined && (Object.keys(doc.config.tabs[currentTab].request.params).length > 0)) {
+						doc.container.find('.request').append('<div class="params"></div>');
+						doc.container.find('.params').append('<h2 class="idoc-header">Params</h2>');
+						doc.container.find('.params').append(_generateForm(doc.config.tabs[currentTab].request.params));
+					}
+					
+					doc.container.find('.output').append('<h2 class="idoc-header">Request URI</h2><div class="request-uri output-info"></div>');
+					doc.container.find('.output').append('<h2 class="idoc-header">Response Code</h2><div class="response-code output-info"></div>');
+					doc.container.find('.output').append('<h2 class="idoc-header">Response Headers</h2><div class="response-headers output-info"></div>');
+					doc.container.find('.output').append('<h2 class="idoc-header">Response Body</h2><div class="response-body output-info"></div>');
 					// create request - if fails, display error message in DIV
-				}	
+				} else {
+					// simple sample content display UI
+					doc.container.find('.input').append('<textarea class="content"></textarea>');
+					doc.container.find('.execute').removeClass('show');  // displays execute button
+					doc.container.find('textarea').val(doc.config.tabs[currentTab].contents);
+					// TODO:  Add any CodeMirror related wiring here for highlighting
+				}
+
 			};
 
 			execute = function () {    
@@ -156,12 +202,7 @@ ML.IDOCS = function () {
 			
 			/*** RENDER UI ***/
 			doc.container.append('<ul class="tabs"></ul><div class="input"></div><div class="output"></div>');
-			doc.container.find('.input').append('<textarea class="content"></textarea><br /><div class="button execute">Execute</div>');
-			doc.container.find('.output').append('<h2 class="idoc-header">Request URI</h2><div class="request-uri output-info"></div>');
-			doc.container.find('.output').append('<h2 class="idoc-header">Response Code</h2><div class="response-code output-info"></div>');
-			doc.container.find('.output').append('<h2 class="idoc-header">Response Headers</h2><div class="response-headers output-info"></div>');
-			doc.container.find('.output').append('<h2 class="idoc-header">Response Body</h2><div class="response-body output-info"></div>');
-			
+
 			// create UI for the tabs
 			$.each(doc.config.tabs, function(key, value) {			
 				if (!ML.assert((value.name !== undefined),'error','ERROR: ML.IDOCS (create) - the required property "name" in "config" tabs array location: ' + key + ' is undefined')) return false; /* exits ML.IDOCS doc creation */

@@ -5,10 +5,11 @@
 	
 	<title>iDocs Example</title>
 	
+	<link rel="stylesheet" href="css/screen.css" />
 	<link rel="stylesheet" href="css/jquery.treeview.css" />
 	<link rel="stylesheet" href="css/ml.idocs.css" />
 	
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
 	<script src="js/ml.idocs.js" type="text/javascript"></script>
 	<script type="text/javascript">
 	$(function() {
@@ -20,15 +21,18 @@
 						method:'GET',
 						endpoint: '/v1/',
 						headers: {},
-						params: {}						// object with paramaters to pass to endpoint
+						params: {
+							param1: 'test',
+							param2: 'test',
+							param3: 'test',
+							param4: 'test'
+						}						// object with paramaters to pass to endpoint
 					},
-					write: false,						// write -> whether or not the container is writeable - not supported in v1
 					execute: true,						// execute -> whether or not to execute against server
 				},
 				{
 					name: 'CURL',						// REQUIRED: name -> name displayed on the tab
 					contents: "curl -X GET 'http://myhost/store?uri=/afternoon-drink.json'",  // REQUIRED: contents -> for display in container
-					write: false,						// write -> whether or not the container is writeable - not supported in v1
 					execute: false						// execute -> whether or not to execute against server
 				}			
 			]
@@ -44,6 +48,8 @@
 	<p>This is the initial example of the MarkLogic iDocs library.  There will soon be more detailed usage documentation here</p>
 	
 	<div id="example1"></div>
+	<div id="example2"></div>
+	<div id="example3"></div>
 	
 	</div> 
 </body>

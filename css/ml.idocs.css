@@ -1,12 +1,15 @@
 
-ul.tabs { background-color: #F3F3F3; height: 27px; margin: 0px; padding: 0px; list-style: none outside none; }
+ul.tabs { height: 27px; margin: 0px; padding: 0px; list-style: none outside none; }
 	ul.tabs li { float: left; height: 18px; margin: 4px 4px -1px 0; background-color: #c5c5c5; border-color: #B2B2B2; border-style: solid; border-top-left-radius: 4px; border-top-right-radius: 4px; border-width: 1px 1px 0; color: #444444; cursor: pointer; display: block; font-size: 11px; font-weight: bold; padding: 4px 8px 0 8px; position: relative; text-align: center; }
 	ul.tabs li.selected { background-color: #FFFFFF; border-bottom: 1px solid #FFFFFF; color: #222222; }
 	
 .input, .output { clear:both; padding:0 0 8px 0; }
-.input { }
-	.input textarea{ padding:8px; margin:0 0 8px 0; width:300px; height:150px; border:1px solid #B2B2B2; }
-	.input .button { font-size:12px; padding:8px 12px; background-color: #60cd35; color:#fff; border-radius: 4px; moz-border-radius: 4px; -webkit-border-radius: 4px; cursor:pointer; display:none; }
+.input { width:100%; border:1px solid #B2B2B2; }
+	.input textarea{ padding:8px; width:100%; height:100%; }
+	.input input{ padding:2px; width:80%; }
+	.input th,td{ text-align:left; }
+	.input th:first-child,td:first-child{ width:40%; }
+	.input .button { display:none; font-size:12px; padding:8px 12px; background-color: #60cd35; color:#fff; border-radius: 4px; moz-border-radius: 4px; -webkit-border-radius: 4px; cursor:pointer; display:none; }
 	.input .button:active { background-color: #ec9d2d;  }
 	.input .button.show { display:inline-block; }
 
