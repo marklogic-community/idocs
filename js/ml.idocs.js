@@ -356,16 +356,16 @@ ML.REQUEST = function (method, uri, dataType, headers, params, body) {
 			requestURI = config.uri;        
 			break;
 		case 'POST': 
-			requestURI = this._addParamsToQueryString(config.uri,config.params);        
+			requestURI = _addParamsToQueryString(config.uri,config.params);        
 			break;
 		case 'PUT':
 			if (config.body !== undefined) {
 				ajaxObj.data = config.body;
 			}
-			requestURI = this._addParamsToQueryString(config.uri,config.params);
+			requestURI = _addParamsToQueryString(config.uri,config.params);
 			break;
 		case 'DELETE':
-			requestURI = this._addParamsToQueryString(config.uri,config.params);
+			requestURI = _addParamsToQueryString(config.uri,config.params);
 			break;
 		default: 
 			break;
@@ -395,7 +395,7 @@ ML.REQUEST = function (method, uri, dataType, headers, params, body) {
 	};
 
 	_addParamsToQueryString = function (url, params) {
-		if (this._countKeys(params) > 0) {
+		if (_countKeys(params) > 0) {
 			url += "?";
 			for(var key in params) {
 				if (params[key] !== undefined)

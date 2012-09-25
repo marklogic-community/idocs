@@ -39,6 +39,31 @@
 		};
 		
 		ML.IDOCS.create("#example1",config);
+		
+		
+		
+		var	config2 = {
+			"tabs":[
+				{
+					name: 'REST API',					// REQUIRED: name -> name displayed on the tab
+					request: {
+						method:'POST',
+						endpoint: '/v1/some/endpoint.xqy',
+						headers: {},
+						params: {
+							myparam:  '111111',
+							myparam2: '222222',
+							myparam3: '333333',
+							myparam4: '444444'
+						}						// object with paramaters to pass to endpoint
+					},
+					execute: true,						// execute -> whether or not to execute against server
+				}		
+			]
+		};
+		
+		ML.IDOCS.create("#example2",config2);
+		
 	});
 	</script>
 </head>
@@ -47,9 +72,11 @@
 	<h1>iDocs Example</h1>
 	<p>This is the initial example of the MarkLogic iDocs library.  There will soon be more detailed usage documentation here</p>
 	
-	<div id="example1"></div>
-	<div id="example2"></div>
-	<div id="example3"></div>
+	<div class="idoc" id="example1"></div>
+	
+	<div class="idoc" id="example2"></div>
+	
+	<div class="idoc" id="example3"></div>
 	
 	</div> 
 </body>
