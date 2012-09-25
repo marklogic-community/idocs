@@ -120,12 +120,11 @@ ML.IDOCS = function () {
 				execute;
 			
 			// set defaults
+			/* public variables */
 			doc = {};			
 			doc.containerID = containerID;
 			doc.container = $(containerID);
-			/* public variables */
 			doc.config = config;
-			
 			/* public functions */
 			doc.display = display;
 			doc.execute = execute;
@@ -161,42 +160,56 @@ ML.IDOCS = function () {
 				doc.container.find('.output').html('');
 				
 				// if there is a request object, display the request UI, otherwise, show 
-				if (doc.config.tabs[currentTab].request !== undefined) {
+				if (currentTabConfig.request !== undefined) {
 					// request UI
-					doc.container.find('.execute').addClass('show');  				// displays execute button					
-					doc.container.find('.input').append('<div class="request"><div class="info"><p><span class="method">' + (doc.config.tabs[currentTab].request.method || "") + '</span><span class="uri">' + (doc.config.tabs[currentTab].request.endpoint || "") + '</span></p><p class="description">' + (doc.config.tabs[currentTab].request.description || "") + '</p></div>');					
+					doc.container.find('.input').append('<div class="request"><div class="info"><p><span class="method">' + (currentTabConfig.request.method || "") + '</span> <span class="uri">' + (currentTabConfig.request.endpoint || "") + '</span></p><p class="description">' + (currentTabConfig.request.description || "") + '</p></div>');					
 					
 					// UI for request headers, if headers passed
-					if (doc.config.tabs[currentTab].request.headers !== undefined && (Object.keys(doc.config.tabs[currentTab].request.headers).length > 0)) {
+					if (currentTabConfig.request.headers !== undefined && (Object.keys(currentTabConfig.request.headers).length > 0)) {
 						doc.container.find('.request').append('<div class="headers"></div>');
 						doc.container.find('.headers').append('<h2 class="idoc-header">Headers</h2>');
-						doc.container.find('.headers').append(_generateForm(doc.config.tabs[currentTab].request.headers));
+						doc.container.find('.headers').append(_generateForm(currentTabConfig.request.headers));
 					}
 					
 					// UI for params, if params passed
-					if (doc.config.tabs[currentTab].request.params !== undefined && (Object.keys(doc.config.tabs[currentTab].request.params).length > 0)) {
+					if (currentTabConfig.request.params !== undefined && (Object.keys(currentTabConfig.request.params).length > 0)) {
 						doc.container.find('.request').append('<div class="params"></div>');
 						doc.container.find('.params').append('<h2 class="idoc-header">Params</h2>');
-						doc.container.find('.params').append(_generateForm(doc.config.tabs[currentTab].request.params));
+						doc.container.find('.params').append(_generateForm(currentTabConfig.request.params));
 					}
 					
 					doc.container.find('.output').append('<h2 class="idoc-header">Request URI</h2><div class="request-uri output-info"></div>');
 					doc.container.find('.output').append('<h2 class="idoc-header">Response Code</h2><div class="response-code output-info"></div>');
 					doc.container.find('.output').append('<h2 class="idoc-header">Response Headers</h2><div class="response-headers output-info"></div>');
 					doc.container.find('.output').append('<h2 class="idoc-header">Response Body</h2><div class="response-body output-info"></div>');
-					// create request - if fails, display error message in DIV
+					
+					doc.container.find('.execute').addClass('show');  				// displays execute button					
+					
+					// create request object			
+					currentTabConfig.requestObj = ML.REQUEST(currentTabConfig.request.method, currentTabConfig.request.endpoint, 'json', currentTabConfig.request.headers, currentTabConfig.request.params, undefined);
 				} else {
 					// simple sample content display UI
 					doc.container.find('.input').append('<textarea class="content"></textarea>');
 					doc.container.find('.execute').removeClass('show');  // displays execute button
-					doc.container.find('textarea').val(doc.config.tabs[currentTab].contents);
+					doc.container.find('textarea').val(currentTabConfig.contents);
 					// TODO:  Add any CodeMirror related wiring here for highlighting
 				}
 
 			};
 
-			execute = function () {    
-				alert('TODO: Add execute code here...')
+			execute = function (tabToExec) {
+				// clear previous output
+				doc.container.find('.output .output-info').html('');
+				// show output pane
+				doc.container.find('.output').addClass('show');
+				// reveal spinners
+				doc.container.find('.output').addClass('loading');
+		
+				doc.config.tabs[tabToExec].requestObj.execute( function(data,headers){	
+					// hide spinners
+					doc.container.find('.output').removeClass('loading');					
+					alert('executeCallback');
+				});
 			};
 			/*** END Public iDOC functions ***/
 			
@@ -215,14 +228,20 @@ ML.IDOCS = function () {
 			
 			
 			/******* iDOC INTERACTIONS ******/
+			// TAB CLICK
 			doc.container.delegate(".tabs li", "click", function(event){	
 				var tabToDisplay = $(this).attr('id').replace(doc.container.attr('id'),'');
+				doc.container.find('.output').removeClass('show');
 				display(tabToDisplay);
 			});
+			
+			// EXECUTE BUTTON CLICK
 			doc.container.delegate(".execute", "click", function(event){	
 				var tabToExecute = doc.container.find('li.selected').attr('id').replace(doc.container.attr('id'),'');
 				execute(tabToExecute);
+				return false; // don't submit form
 			});
+			/******* END iDOC INTERACTIONS ******/
 			
 			return doc;
 		}();
@@ -247,7 +266,7 @@ ML.IDOCS = function () {
 }();
 
 
-ML.REQUEST = function (method, uri, headers, dataType, params, body, callback) {
+ML.REQUEST = function (method, uri, dataType, headers, params, body) {
 'use strict';
 // method 			- (required) "GET","POST","PUT","DELETE"
 // uri 				- (required) path to request endpoint  (cross-site requests not supported in v.1)
@@ -283,14 +302,12 @@ ML.REQUEST = function (method, uri, headers, dataType, params, body, callback) {
 	config.params.view		= 'all';
 	config.params.options	= 'all';
 	
-	numQueriesExecuting 	= 0; 
-    serverConnectionDown    = false;
 	methodTypes 			= ["GET","POST","PUT","DELETE"];
 	
 	// ensure defaults required variable are defined
-	if (!ML.assert((method === undefined),'error','ERROR: ML.REQUEST - required variable "method" is undefined')) return false; /* exits ML.REQUEST creation */
-	if (!ML.assert((uri === undefined),'error','ERROR: ML.REQUEST - required variable "uri" is undefined')) return false; /* exits ML.REQUEST creation */
-	if (!ML.assert(($.inArray(method,methodTypes) === -1),'error','ERROR: ML.REQUEST - variable "method" is not an acceptable type ("GET","POST","PUT","DELETE")')) return false; /* exits ML.REQUEST creation */
+	if (!ML.assert((method !== undefined),'error','ERROR: ML.REQUEST - required variable "method" is undefined')) return false; /* exits ML.REQUEST creation */
+	if (!ML.assert((uri !== undefined),'error','ERROR: ML.REQUEST - required variable "uri" is undefined')) return false; /* exits ML.REQUEST creation */
+	if (!ML.assert(($.inArray(method,methodTypes) !== -1),'error','ERROR: ML.REQUEST - variable "method" is not an acceptable type ("GET","POST","PUT","DELETE")')) return false; /* exits ML.REQUEST creation */
 	
 	// create configuration object & extend defaults
 	config.method 			= method;
@@ -300,27 +317,30 @@ ML.REQUEST = function (method, uri, headers, dataType, params, body, callback) {
 	config.headers 			= headers;
 	config.body 			= body;
 	config.dataType 		= (dataType) ? dataType : 'json'; 
+	config.callback 		= (typeof callback == "function") ? callback : undefined; 
 
 	/************************************/
 	/*** SERVER INTERACTION FUNCTIONS ***/
 	/************************************/
 	_getResponseHeaders = function (xhr) {
-		// MODIFY FOR MY PURPOSES
-		var getAllResponseHeaders = xhr.getAllResponseHeaders;
+		var getAllResponseHeaders, allHeaders;
+		
+		getAllResponseHeaders = xhr.getAllResponseHeaders;
 
 		xhr.getAllResponseHeaders = function () {
 			if ( getAllResponseHeaders() ) {
 				return getAllResponseHeaders();
-			}
-			var allHeaders = "";
-			$( ["Cache-Control", "Content-Language", "Content-Type",
-					"Expires", "Last-Modified", "Pragma"] ).each(function (i, header_name) {
+			} else {
+				allHeaders = "";
+				$( ["Cache-Control", "Content-Language", "Content-Type",
+						"Expires", "Last-Modified", "Pragma"] ).each(function (i, header_name) {
 
-				if ( xhr.getResponseHeader( header_name ) ) {
-					allHeaders += header_name + ": " + xhr.getResponseHeader( header_name ) + "\n";
-				}
-				return allHeaders;
-			});
+					if ( xhr.getResponseHeader( header_name ) ) {
+						allHeaders += header_name + ": " + xhr.getResponseHeader( header_name ) + "\n";
+					}
+					return allHeaders;
+				});
+			}
 		};
 		return xhr;
 	};
@@ -330,22 +350,22 @@ ML.REQUEST = function (method, uri, headers, dataType, params, body, callback) {
 		
 		config.params.cache 	= new Date().getTime();  // cache-buster	
 		
-		switch(method)
+		switch(config.method)
 		{
 		case 'GET':
-			// no special processing
+			requestURI = config.uri;        
 			break;
 		case 'POST': 
-			requestURI = this._addParamsToQueryString(config.uri,params);        
+			requestURI = this._addParamsToQueryString(config.uri,config.params);        
 			break;
 		case 'PUT':
 			if (config.body !== undefined) {
 				ajaxObj.data = config.body;
 			}
-			requestURI = this._addParamsToQueryString(config.uri,params);
+			requestURI = this._addParamsToQueryString(config.uri,config.params);
 			break;
 		case 'DELETE':
-			requestURI = this._addParamsToQueryString(config.uri,params);
+			requestURI = this._addParamsToQueryString(config.uri,config.params);
 			break;
 		default: 
 			break;
@@ -354,7 +374,7 @@ ML.REQUEST = function (method, uri, headers, dataType, params, body, callback) {
 		// TODO:  Add setting of request headers
 		
 		$.ajax({
-			type: method,
+			type: config.method,
 			contentType: "text/plain",
 			url: requestURI,
 			data: config.params,
@@ -417,7 +437,7 @@ ML.REQUEST = function (method, uri, headers, dataType, params, body, callback) {
 	
 	// execute server request
 	execute = function (callback) {    
-		this._serverRequest(function(data,headers) {
+		_serverRequest(function(data,headers) {
 			if (callback !== undefined)
 				callback(data,headers);
 		});   
