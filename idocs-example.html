@@ -32,7 +32,7 @@
 				},
 				{
 					name: 'CURL',						// REQUIRED: name -> name displayed on the tab
-					contents: "curl -X GET 'http://myhost/store?uri=/afternoon-drink.json'",  // REQUIRED: contents -> for display in container
+					contents: "curl -X GET '/v1/some/endpoint.xqy?var=blah'",  // REQUIRED: contents -> for display in container
 					execute: false						// execute -> whether or not to execute against server
 				}			
 			]
@@ -63,7 +63,20 @@
 		};
 		
 		ML.IDOCS.create("#example2",config2);
+	
+
+		var	config3 = {
+			"tabs":[
+				{
+					name: 'CURL',						// REQUIRED: name -> name displayed on the tab
+					contents: "curl -X PUT '/v1/some/endpoint.xqy?var=blah'",  // REQUIRED: contents -> for display in container
+					execute: false						// execute -> whether or not to execute against server
+				}		
+			]
+		};
 		
+		ML.IDOCS.create("#example3",config3);
+	
 	});
 	</script>
 </head>
