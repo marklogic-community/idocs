@@ -115,7 +115,9 @@ ML.IDOCS = function () {
 		// create new doc object
 		docs[containerID] = function () { 
 			var doc,
-				_generateForm,
+				_getInputValuesAsJSON,
+				_generateInputs,
+				_saveFormValues,
 				display,
 				execute;
 			
@@ -129,28 +131,58 @@ ML.IDOCS = function () {
 			doc.display = display;
 			doc.execute = execute;
 			
+			/*** returns a JSON object with name value pairs based on form input values.  Used with params and headers input forms. ***/
+			_getInputValuesAsJSON = function(container) {
+				var inputJSON;
+				
+				inputJSON = {};
+				$.each(container.find('input'), function(name, value) {
+					inputJSON[$(this).attr("name")] = $(this).val();
+				});
+				
+				return inputJSON;
+			};
 			
-			/*** returns a form object, generated from the JSON object passed in, with name value pair properties. ***/
-			_generateForm = function(formObj) {
+			/*** returns a table DOM object, generated from the JSON object passed in, with name value pair properties. ***/
+			_generateInputs = function(formObj) {
 				var table;
 				
-				table = $('<form><table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody></tbody></table><input type="submit" class="button execute" value="Execute"></form>');
+				table = $('<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody></tbody></table>');
 				
 				$.each(formObj, function(name, value) {		
-					table.find('tbody').append('<tr><td class="name">' + name + '</td><td class="parameter"><input value="' + value + '" name="' + name + '"></td></tr>')
+					table.find('tbody').append('<tr><td class="name">' + name + '</td><td class="parameter"><input value="' + value + '" name="' + name + '"></td></tr>');
 				});
 				
 				return table;
 			};
 			
+			
+			_saveFormValues = function() {
+				var currentTabConfig = doc.config.tabs[doc.currentTab];
+				if (doc.container.find('.params').length > 0) {
+					currentTabConfig.request.params = _getInputValuesAsJSON(doc.container.find('.params'));
+				}
+				
+				if (doc.container.find('.headers').length > 0) {
+					currentTabConfig.request.headers = _getInputValuesAsJSON(doc.container.find('.headers'));
+				}
+				
+				if (doc.container.find('.body').length > 0) {
+					currentTabConfig.request.body = doc.container.find('.body textarea').val();
+				}			
+				
+			};
+			
 			/*** Public iDOC functions ***/
 			display = function(currentTab) {
+				var currentTabConfig;
 				if (!ML.assert((containerID !== undefined),'error','ERROR: ML.IDOCS (displayTab) - required variable "containerID" is undefined')) return false; 
 				if (!ML.assert((currentTab !== undefined),'error','ERROR: ML.IDOCS (displayTab) - required variable "currentTab" is undefined')) return false;
 				if (!ML.assert((currentTab >= 0),'error','ERROR: ML.IDOCS (displayTab) - required variable "currentTab" is not a valid array location')) return false;
 				
 				if (!ML.assert((doc.config.tabs[currentTab] !== undefined),'error','ERROR: ML.IDOCS (displayTab) - "currentTab" ' + currentTab + ' is not valid array location')) return false; /* exits ML.IDOCS doc creation */
 				
+				doc.currentTab = currentTab;
 				currentTabConfig = doc.config.tabs[currentTab];
 				doc.container.find('.tabs li').removeClass('selected'); 			// deselect all tabs
 				$(doc.container.find('.tabs li')[currentTab]).addClass('selected');	// select current tab
@@ -165,17 +197,29 @@ ML.IDOCS = function () {
 					doc.container.find('.input').append('<div class="request"><div class="info"><p><span class="method">' + (currentTabConfig.request.method || "") + '</span> <span class="uri">' + (currentTabConfig.request.endpoint || "") + '</span></p><p class="description">' + (currentTabConfig.request.description || "") + '</p></div>');					
 					
 					// UI for request headers, if headers passed
-					if (currentTabConfig.request.headers !== undefined && (Object.keys(currentTabConfig.request.headers).length > 0)) {
-						doc.container.find('.request').append('<div class="headers"></div>');
-						doc.container.find('.headers').append('<h2 class="idoc-header">Headers</h2>');
-						doc.container.find('.headers').append(_generateForm(currentTabConfig.request.headers));
-					}
-					
-					// UI for params, if params passed
-					if (currentTabConfig.request.params !== undefined && (Object.keys(currentTabConfig.request.params).length > 0)) {
-						doc.container.find('.request').append('<div class="params"></div>');
-						doc.container.find('.params').append('<h2 class="idoc-header">Params</h2>');
-						doc.container.find('.params').append(_generateForm(currentTabConfig.request.params));
+					if (currentTabConfig.request.params !== undefined) {
+						doc.container.find('.request').append('<form></form>');
+						
+						// UI for params, if params passed
+						if (currentTabConfig.request.headers !== undefined && (Object.keys(currentTabConfig.request.headers).length > 0)) {
+							doc.container.find('.request form').append('<div class="headers"></div>');
+							doc.container.find('.headers').append('<h2 class="idoc-header">Headers</h2>');
+							doc.container.find('.headers').append(_generateInputs(currentTabConfig.request.headers));
+						}
+						
+						if (currentTabConfig.request.params !== undefined && (Object.keys(currentTabConfig.request.params).length > 0)) {
+							doc.container.find('.request form').append('<div class="params"></div>');
+							doc.container.find('.params').append('<h2 class="idoc-header">Params</h2>');
+							doc.container.find('.params').append(_generateInputs(currentTabConfig.request.params));
+						}
+						
+						if (currentTabConfig.request.body !== undefined) {
+							doc.container.find('.request form').append('<div class="body"></div>');
+							doc.container.find('.body').append('<h2 class="idoc-header">Body</h2>');
+							doc.container.find('.body').append('<textarea>' + currentTabConfig.request.body + '</textarea>');
+						}
+						
+						doc.container.find('.request form').append('<input type="submit" class="button execute" value="Execute">');
 					}
 					
 					doc.container.find('.output').append('<h2 class="idoc-header">Request URI</h2><div class="request-uri output-info"></div>');
@@ -184,9 +228,6 @@ ML.IDOCS = function () {
 					doc.container.find('.output').append('<h2 class="idoc-header">Response Body</h2><div class="response-body output-info"></div>');
 					
 					doc.container.find('.execute').addClass('show');  				// displays execute button					
-					
-					// create request object			
-					currentTabConfig.requestObj = ML.REQUEST(currentTabConfig.request.method, currentTabConfig.request.endpoint, 'json', currentTabConfig.request.headers, currentTabConfig.request.params, undefined);
 				} else {
 					// simple sample content display UI
 					doc.container.find('.input').append('<textarea class="content"></textarea>');
@@ -197,7 +238,12 @@ ML.IDOCS = function () {
 
 			};
 
-			execute = function (tabToExec) {
+			execute = function () {
+				var currentTabConfig = doc.config.tabs[doc.currentTab];				
+				_saveFormValues();
+				
+				currentTabConfig.requestObj = ML.REQUEST(currentTabConfig.request.method, currentTabConfig.request.endpoint, 'json', currentTabConfig.request.headers, currentTabConfig.request.params, currentTabConfig.request.body);
+				
 				// clear previous output
 				doc.container.find('.output .output-info').html('');
 				// show output pane
@@ -205,25 +251,32 @@ ML.IDOCS = function () {
 				// reveal spinners
 				doc.container.find('.output').addClass('loading');
 		
-				doc.config.tabs[tabToExec].requestObj.execute( function(data,headers){	
+				currentTabConfig.requestObj.execute( function(data,headers){	
 					// hide spinners
-					doc.container.find('.output').removeClass('loading');					
+					doc.container.find('.output').removeClass('loading');		
+
+					// TODO:  Set HTML output with response information
+					// TODO:  Add error handling
 					alert('executeCallback');
 				});
 			};
 			/*** END Public iDOC functions ***/
 			
 			/*** RENDER UI ***/
-			doc.container.append('<ul class="tabs"></ul><div class="input"></div><div class="output"></div>');
 
 			// create UI for the tabs
-			$.each(doc.config.tabs, function(key, value) {			
-				if (!ML.assert((value.name !== undefined),'error','ERROR: ML.IDOCS (create) - the required property "name" in "config" tabs array location: ' + key + ' is undefined')) return false; /* exits ML.IDOCS doc creation */
-				doc.container.find('.tabs').append('<li id="' + doc.container.attr('id') + key + '">' + value.name + '</li>');
-			});
-			
-			// default display of first tab
-			display(0);
+			if (doc.config.tabs.length > 0) {
+				doc.container.append('<ul class="tabs"></ul><div class="input"></div><div class="output"></div>');
+				$.each(doc.config.tabs, function(key, value) {			
+					if (!ML.assert((value.name !== undefined),'error','ERROR: ML.IDOCS (create) - the required property "name" in "config" tabs array location: ' + key + ' is undefined')) return false; /* exits ML.IDOCS doc creation */
+					doc.container.find('.tabs').append('<li id="' + doc.container.attr('id') + key + '">' + value.name + '</li>');
+				});
+				
+				// default display of first tab
+				display(0);
+			} else {
+				doc.container.append("<p>ERROR: ML.DOC misconfigured.  No tabs to render");
+			}
 			/*** END RENDER UI ***/
 			
 			
@@ -231,14 +284,14 @@ ML.IDOCS = function () {
 			// TAB CLICK
 			doc.container.delegate(".tabs li", "click", function(event){	
 				var tabToDisplay = $(this).attr('id').replace(doc.container.attr('id'),'');
+				_saveFormValues();
 				doc.container.find('.output').removeClass('show');
 				display(tabToDisplay);
 			});
 			
 			// EXECUTE BUTTON CLICK
 			doc.container.delegate(".execute", "click", function(event){	
-				var tabToExecute = doc.container.find('li.selected').attr('id').replace(doc.container.attr('id'),'');
-				execute(tabToExecute);
+				execute();
 				return false; // don't submit form
 			});
 			/******* END iDOC INTERACTIONS ******/

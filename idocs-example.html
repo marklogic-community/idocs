@@ -13,6 +13,8 @@
 	<script src="js/ml.idocs.js" type="text/javascript"></script>
 	<script type="text/javascript">
 	$(function() {
+	
+		/****** EXAMPLE 1 ******/
 		var	config = {
 			"tabs":[
 				{
@@ -20,13 +22,18 @@
 					request: {
 						method:'GET',
 						endpoint: '/v1/',
-						headers: {},
+						body: 'this is my body text',
+						headers: {
+							header2: '222222',
+							header3: '333333',
+							header4: '444444'
+						},								
 						params: {
 							param1: 'test1',
 							param2: 'test2',
 							param3: 'test3',
 							param4: 'test4'
-						}						// object with paramaters to pass to endpoint
+						}						
 					},
 					execute: true,						// execute -> whether or not to execute against server
 				},
@@ -42,6 +49,7 @@
 		
 		
 		
+		/****** EXAMPLE 2 ******/
 		var	config2 = {
 			"tabs":[
 				{
@@ -49,13 +57,16 @@
 					request: {
 						method:'POST',
 						endpoint: '/v1/some/endpoint.xqy',
-						headers: {},
+						headers: {
+							header1:  '111111',
+							header2: '222222'
+						},								
 						params: {
 							myparam:  '111111',
 							myparam2: '222222',
 							myparam3: '333333',
 							myparam4: '444444'
-						}						// object with paramaters to pass to endpoint
+						}						
 					},
 					execute: true,						// execute -> whether or not to execute against server
 				}		
@@ -65,6 +76,8 @@
 		ML.IDOCS.create("#example2",config2);
 	
 
+	
+		/****** EXAMPLE 3 ******/
 		var	config3 = {
 			"tabs":[
 				{

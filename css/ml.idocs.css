@@ -7,8 +7,8 @@ ul.tabs { height: 27px; margin: 0px; padding: 0px; list-style: none outside none
 	
 .input, .output { clear:both; padding:0 0 8px 0; }
 .input { width:100%; border:1px solid #B2B2B2; padding: 4px 8px; overflow: auto; }
-	.input textarea{ padding:8px; width:90%;; height:100%; }
-	.input table{ width:100%; }
+	.input textarea{ padding:8px; width:90%;; height:100%; margin:0 0 10px 0; }
+	.input table{ width:100%; margin:0 0 10px 0; }
 	.input table input{ padding:2px; width:90%; }
 	.input th,td{ text-align:left; font-size: 16px; }
 	.input th:first-child,td:first-child{ width:40%; }
